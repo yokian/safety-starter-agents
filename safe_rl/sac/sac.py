@@ -155,7 +155,7 @@ def sac(env_fn, actor_fn=mlp_actor, critic_fn=mlp_critic, ac_kwargs=dict(), seed
         update_freq=1, render=False, 
         fixed_entropy_bonus=None, entropy_constraint=-1.0,
         fixed_cost_penalty=None, cost_constraint=None, cost_lim=None,
-        reward_scale=1,
+        reward_scale=1, **kwargs
         ):
     """
 

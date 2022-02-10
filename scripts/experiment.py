@@ -4,14 +4,17 @@ import safety_gym
 import safe_rl
 from safe_rl.utils.run_utils import setup_logger_kwargs
 from safe_rl.utils.mpi_tools import mpi_fork
+import sys
+sys.path.append('/home/jeappen/code/zikang/HiSaRL') # Adding zikang repo
+from shrl.envs.point import PointNav as zikenv
+# from shrl.envs.car import CarNav as zikenv
 
-
-def main(robot, task, algo, seed, exp_name, cpu):
+def main(robot, task, algo, seed, exp_name=None, cpu=4):
 
     # Verify experiment
     robot_list = ['point', 'car', 'doggo']
     task_list = ['goal1', 'goal2', 'button1', 'button2', 'push1', 'push2']
-    algo_list = ['ppo', 'ppo_lagrangian', 'trpo', 'trpo_lagrangian', 'cpo']
+    algo_list = ['ppo', 'ppo_lagrangian', 'trpo', 'trpo_lagrangian', 'cpo','sac']
 
     algo = algo.lower()
     task = task.capitalize()
@@ -21,7 +24,8 @@ def main(robot, task, algo, seed, exp_name, cpu):
     assert robot.lower() in robot_list, "Invalid robot"
 
     # Hyperparameters
-    exp_name = algo + '_' + robot + task
+    if exp_name is None:
+        exp_name = algo + '_' + robot + task
     if robot=='Doggo':
         num_steps = 1e8
         steps_per_epoch = 60000
@@ -31,7 +35,7 @@ def main(robot, task, algo, seed, exp_name, cpu):
     epochs = int(num_steps / steps_per_epoch)
     save_freq = 50
     target_kl = 0.01
-    cost_lim = 25
+    cost_lim = 0
 
     # Fork for parallelizing
     mpi_fork(cpu)
@@ -44,7 +48,7 @@ def main(robot, task, algo, seed, exp_name, cpu):
     algo = eval('safe_rl.'+algo)
     env_name = 'Safexp-'+robot+task+'-v0'
 
-    algo(env_fn=lambda: gym.make(env_name),
+    algo(env_fn=lambda: zikenv(),
          ac_kwargs=dict(
              hidden_sizes=(256, 256),
             ),
