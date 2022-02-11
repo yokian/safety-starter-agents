@@ -129,7 +129,7 @@ class Logger:
         assert key not in self.log_current_row, "You already set %s this iteration. Maybe you forgot to call dump_tabular()"%key
         self.log_current_row[key] = val
 
-    def save_config(self, config):
+    def save_config(self, config, wandb=None):
         """
         Log an experiment configuration.
 
@@ -150,6 +150,9 @@ class Logger:
             config_json['exp_name'] = self.exp_name
         if proc_id()==0:
             output = json.dumps(config_json, separators=(',',':\t'), indent=4, sort_keys=True)
+            if proc_id() == 0 and wandb is not None:
+                    # Saving all config options used
+                    wandb.config.update({"config_json":output})/
             print(colorize('Saving config:\n', color='cyan', bold=True))
             print(output)
             with open(osp.join(self.output_dir, "config.json"), 'w') as out:

@@ -112,3 +112,6 @@ data
 *.*~
 
 .DS_Store
+
+# wandb
+scripts/wandb

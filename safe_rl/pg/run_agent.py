@@ -46,7 +46,8 @@ def run_polopt_agent(env_fn,
                      # Logging:
                      logger=None, 
                      logger_kwargs=dict(), 
-                     save_freq=1
+                     save_freq=1,
+                     wandb=None
                      ):
 
 
@@ -55,7 +56,7 @@ def run_polopt_agent(env_fn,
     #=========================================================================#
 
     logger = EpochLogger(**logger_kwargs) if logger is None else logger
-    logger.save_config(locals())
+    logger.save_config(locals(), wandb=wandb)
 
     seed += 10000 * proc_id()
     tf.set_random_seed(seed)
@@ -477,6 +478,10 @@ def run_polopt_agent(env_fn,
         # Time and steps elapsed
         logger.log_tabular('TotalEnvInteracts', (epoch+1)*steps_per_epoch)
         logger.log_tabular('Time', time.time()-start_time)
+
+        # Before showing results send some to wandb!
+        if proc_id() == 0 and wandb is not None:
+            wandb.log(logger.log_current_row)
 
         # Show results!
         logger.dump_tabular()

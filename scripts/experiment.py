@@ -3,11 +3,13 @@ import gym
 import safety_gym
 import safe_rl
 from safe_rl.utils.run_utils import setup_logger_kwargs
-from safe_rl.utils.mpi_tools import mpi_fork
+from safe_rl.utils.mpi_tools import mpi_fork, proc_id
 import sys
 sys.path.append('/home/jeappen/code/zikang/HiSaRL') # Adding zikang repo
 from shrl.envs.point import PointNav as zikenv
 # from shrl.envs.car import CarNav as zikenv
+
+import wandb
 
 def main(robot, task, algo, seed, exp_name=None, cpu=4):
 
@@ -32,13 +34,36 @@ def main(robot, task, algo, seed, exp_name=None, cpu=4):
     else:
         num_steps = 1e7
         steps_per_epoch = 30000
+
+    # Copied from run_polopt_agent
+    config = {
+    "ent_reg": 0.,
+    
+    "cost_lim":0,
+    "penalty_init":1.,
+    "penalty_lr":5e-2,
+    "target_kl" : 0.01,
+    "vf_lr":1e-3,
+    "vf_iters":80, 
+    }
+
+    
     epochs = int(num_steps / steps_per_epoch)
     save_freq = 50
-    target_kl = 0.01
-    cost_lim = 0
+
+    config["epochs"] = epochs
+    # wandb.config["cost_lim"] = cost_lim
+    # wandb.config["target_kl"] = target_kl
+
 
     # Fork for parallelizing
     mpi_fork(cpu)
+
+    if proc_id() == 0:
+        # For using wandb with mpi
+        wandb.init(project="hisarl-baselines", entity="csbric", config=config)
+        config = wandb.config # For allowing hparam sweep?
+        # TODO: see if we can sweep when using mpi
 
     # Prepare Logger
     exp_name = exp_name or (algo + '_' + robot.lower() + task.lower())
@@ -52,13 +77,15 @@ def main(robot, task, algo, seed, exp_name=None, cpu=4):
          ac_kwargs=dict(
              hidden_sizes=(256, 256),
             ),
-         epochs=epochs,
+        #  epochs=epochs,
          steps_per_epoch=steps_per_epoch,
          save_freq=save_freq,
-         target_kl=target_kl,
-         cost_lim=cost_lim,
+        #  target_kl=target_kl,
+        #  cost_lim=cost_lim,
          seed=seed,
-         logger_kwargs=logger_kwargs
+         logger_kwargs=logger_kwargs,
+         wandb=wandb,
+         **config
          )
 
 
