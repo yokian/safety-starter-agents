@@ -4,17 +4,16 @@ import safety_gym
 import safe_rl
 from safe_rl.utils.run_utils import setup_logger_kwargs
 from safe_rl.utils.mpi_tools import mpi_fork, proc_id
-import sys
-sys.path.append('/home/jeappen/code/zikang/HiSaRL') # Adding zikang repo
-from shrl.envs.point import PointNav as zikenv
-# from shrl.envs.car import CarNav as zikenv
+import sys, pathlib
+sys.path.append(pathlib.Path().parent.resolve().parent) # Adding zikang repo
 
 import wandb
+# wandb = None
 
 def main(robot, task, algo, seed, exp_name=None, cpu=4):
 
     # Verify experiment
-    robot_list = ['point', 'car', 'doggo']
+    robot_list = ['nav', 'point', 'car', 'doggo']
     task_list = ['goal1', 'goal2', 'button1', 'button2', 'push1', 'push2']
     algo_list = ['ppo', 'ppo_lagrangian', 'trpo', 'trpo_lagrangian', 'cpo','sac']
 
@@ -34,6 +33,15 @@ def main(robot, task, algo, seed, exp_name=None, cpu=4):
     else:
         num_steps = 1e7
         steps_per_epoch = 30000
+
+    if robot == 'Nav':
+        from shrl.envs.nav import Continuous2DNav as zikenv
+    elif robot == 'Point':
+        from shrl.envs.point import PointNav as zikenv
+    elif robot == 'Car':
+        from shrl.envs.car import CarNav as zikenv
+    elif robot == 'Doggo':
+        from shrl.envs.doggo import DoggoNav as zikenv
 
     # Copied from run_polopt_agent
     config = {
@@ -55,11 +63,10 @@ def main(robot, task, algo, seed, exp_name=None, cpu=4):
     # wandb.config["cost_lim"] = cost_lim
     # wandb.config["target_kl"] = target_kl
 
-
     # Fork for parallelizing
     mpi_fork(cpu)
 
-    if proc_id() == 0:
+    if proc_id() == 0 and wandb is not None:
         # For using wandb with mpi
         wandb.init(project="hisarl-baselines", entity="csbric", config=config)
         config = wandb.config # For allowing hparam sweep?
