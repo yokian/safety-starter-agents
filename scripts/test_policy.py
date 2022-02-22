@@ -5,6 +5,7 @@ import numpy as np
 from safe_rl.utils.load_utils import load_policy
 from safe_rl.utils.logx import EpochLogger
 
+from shrl.envs.point import PointNav as zikenv
 
 
 def run_policy(env, get_action, max_ep_len=None, num_episodes=100, render=True):
@@ -38,7 +39,10 @@ def run_policy(env, get_action, max_ep_len=None, num_episodes=100, render=True):
     logger.log_tabular('EpLen', average_only=True)
     logger.dump_tabular()
 
+from gym.wrappers.monitor import Monitor
+# from gym.logger import set_level, DEBUG
 
+# set_level(DEBUG)
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser()
@@ -52,4 +56,5 @@ if __name__ == '__main__':
     env, get_action, sess = load_policy(args.fpath,
                                         args.itr if args.itr >=0 else 'last',
                                         args.deterministic)
+    env = Monitor(zikenv(), '_video', force=True)
     run_policy(env, get_action, args.len, args.episodes, not(args.norender))
