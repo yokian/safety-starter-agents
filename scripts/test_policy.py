@@ -5,7 +5,11 @@ import numpy as np
 from safe_rl.utils.load_utils import load_policy
 from safe_rl.utils.logx import EpochLogger
 
-from shrl.envs.point import PointNav as zikenv
+# from shrl.envs.point import PointNav as zikenv
+from shrl.envs.doggo import DoggoNav as zikenv
+from shrl.envs.difficulty import choose_level
+
+import matplotlib.image as pltimg
 
 
 def run_policy(env, get_action, max_ep_len=None, num_episodes=100, render=True):
@@ -18,8 +22,13 @@ def run_policy(env, get_action, max_ep_len=None, num_episodes=100, render=True):
     o, r, d, ep_ret, ep_cost, ep_len, n = env.reset(), 0, False, 0, 0, 0, 0
     while n < num_episodes:
         if render:
-            env.render()
+            # env.render()
             time.sleep(1e-3)
+            im = env.render('rgb_array')
+
+            pltimg.imsave('doggo.png', im)
+            # Takes a single snapshot
+            render = False
 
         a = get_action(o)
         a = np.clip(a, env.action_space.low, env.action_space.high)
@@ -57,4 +66,5 @@ if __name__ == '__main__':
                                         args.itr if args.itr >=0 else 'last',
                                         args.deterministic)
     env = Monitor(zikenv(), '_video', force=True)
+    choose_level(env, 1)
     run_policy(env, get_action, args.len, args.episodes, not(args.norender))
